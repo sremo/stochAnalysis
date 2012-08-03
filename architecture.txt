@@ -1,0 +1,13 @@
+IDEA: 
+- pair trading system
+- trade max 10 stocks, try to achieve market neutrality
+
+NEED:
+- historical prices
+- portfolios
+- strategy
+- list of stocks + prices available between certain dates
+
+Index:
+- tickers list
+- 
