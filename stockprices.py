@@ -2,21 +2,33 @@ import numpy
 import datetime
 # read in stock prices (file, yahoo finance or direct feed)
 
+def mkdate(text):
+    return datetime.datetime.strptime(text, '%Y-%m-%d')    
+
+def mkdatelist(date_lst):
+        rtn = []
+        for datet in date_lst:
+                rtn.append(mkdate(datet))
+        return rtn
+
+
 class Stock:
 	def __init__(self,histDataListRaw,name):
-                histDataList = numpy.array(histDataListRaw)
-		histDataList = numpy.delete(histDataList,0,0)
-		histDataList = histDataList[::-1,:]
-		self.dates = numpy.array(histDataList[:,0])
-		self.size = histDataList.shape[0]
+		histDataList = histDataListRaw[1::]#numpy.delete(histDataListRaw,0,0)
+		histDataList = histDataList[::-1]
+                hd_array = numpy.array(histDataList)
+                
+		self.dates = numpy.array(mkdatelist(hd_array[:,0]), dtype = None)#numpy.array(histDataList[:][0])
+		self.size = (self.dates).shape[0]
 		self.name = name
-		self.open = numpy.array(histDataList[:,1]).astype(float)
-		self.high = numpy.array(histDataList[:,2]).astype(float)
-		self.low = numpy.array(histDataList[:,3]).astype(float)
-		self.close = numpy.array(histDataList[:,4]).astype(float)
-		self.volume = numpy.array(histDataList[:,5]).astype(float)
-		self.adjclose = numpy.array(histDataList[:,6]).astype(float)
-		self.startdate = datetime.date(int(self.dates[0][0:4]),int(self.dates[0][5:7]),int(self.dates[0][8:10]))#self.dates[0]
+		self.open = hd_array[:,1].astype(float)#numpy.array(histDataList[:][1]).astype(float)
+		self.high =  hd_array[:,2].astype(float)#numpy.array(histDataList[:][2]).astype(float)
+		self.low =   hd_array[:,3].astype(float)#numpy.array(histDataList[:][3]).astype(float)
+		self.close =  hd_array[:,4].astype(float)#numpy.array(histDataList[:][4]).astype(float)
+		self.volume =  hd_array[:,5].astype(float)# numpy.array(histDataList[:][5]).astype(float)
+		self.adjclose =  hd_array[:,6].astype(float) #numpy.array(histDataList[:][6]).astype(float)
+		self.startdate = self.dates[0]
+#self.startdate = datetime.date(int(self.dates[0][0:4]),int(self.dates[0][5:7]),int(self.dates[0][8:10]))#self.dates[0]
 		self.enddate = self.dates[-1]
 		self.oorate = numpy.zeros(self.size)
 		self.ocrate = numpy.zeros(self.size)

@@ -11,10 +11,10 @@ tickers_list = open('tickers.txt','r')
 
 SP500 = stockprices.Index("SP500")
 start_date = "20120101"
-end_date = "20120731"
+end_date = "20120701"
 for stock_ticker in tickers_list:
     print stock_ticker
-    hist_prices = ystockquote.get_historical_prices(stock_ticker,start_date,end_date)
+    hist_prices = ystockquote.get_historical_prices(stock_ticker.strip(),start_date,end_date)
     SP500.addStock(stock_ticker,hist_prices)
 
 
