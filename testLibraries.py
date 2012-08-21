@@ -15,6 +15,7 @@ end_date = "20120701"
 for stock_ticker in tickers_list:
     print stock_ticker
     hist_prices = ystockquote.get_historical_prices(stock_ticker.strip(),start_date,end_date)
-    SP500.addStock(stock_ticker,hist_prices)
+    SP500.addStock(stock_ticker.strip(),hist_prices)
 
 
+prtf_remo = stockprices.Portfolio(SP500, "Remo Portfolio")

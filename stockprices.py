@@ -11,6 +11,16 @@ def mkdatelist(date_lst):
                 rtn.append(mkdate(datet))
         return rtn
 
+def daterange(start_date, end_date):
+    for n in range(int ((end_date - start_date).days)):
+        yield start_date + datetime.timedelta(n)
+
+def weekdays_daterange(start_date,end_date):
+    for n in range(int ((end_date - start_date).days)):
+        dte = start_date + datetime.timedelta(n)
+        if (dte.weekday() != 5 and dte.weekday() != 6):
+            yield dte
+        
 
 class Stock:
 	def __init__(self,histDataListRaw,name):
@@ -21,12 +31,12 @@ class Stock:
 		self.dates = numpy.array(mkdatelist(hd_array[:,0]), dtype = None)#numpy.array(histDataList[:][0])
 		self.size = (self.dates).shape[0]
 		self.name = name
-		self.open = hd_array[:,1].astype(float)#numpy.array(histDataList[:][1]).astype(float)
-		self.high =  hd_array[:,2].astype(float)#numpy.array(histDataList[:][2]).astype(float)
-		self.low =   hd_array[:,3].astype(float)#numpy.array(histDataList[:][3]).astype(float)
-		self.close =  hd_array[:,4].astype(float)#numpy.array(histDataList[:][4]).astype(float)
-		self.volume =  hd_array[:,5].astype(float)# numpy.array(histDataList[:][5]).astype(float)
-		self.adjclose =  hd_array[:,6].astype(float) #numpy.array(histDataList[:][6]).astype(float)
+		self.open = hd_array[:,1].astype(float)
+		self.high =  hd_array[:,2].astype(float)
+		self.low =   hd_array[:,3].astype(float)
+		self.close =  hd_array[:,4].astype(float)
+		self.volume =  hd_array[:,5].astype(float)
+		self.adjclose =  hd_array[:,6].astype(float)
 		self.startdate = self.dates[0]
 #self.startdate = datetime.date(int(self.dates[0][0:4]),int(self.dates[0][5:7]),int(self.dates[0][8:10]))#self.dates[0]
 		self.enddate = self.dates[-1]
@@ -50,9 +60,10 @@ class Index:
         newStock = Stock(histDataList, ticker)
         self.available_stocks.append(newStock)
         self.tickers.append(ticker)
+        self.stocks[ticker] = newStock
 
     def getAvailableStocks(self,date):
-        return (ticker for ticker in self.tickers if ((self.stocks).get[ticker]).startdate >= date and  ((self.stocks).get[ticker]).enddate <= date)
+        return [ticker for ticker in self.tickers if ((self.stocks).get(ticker)).startdate <= date and ((self.stocks).get(ticker)).enddate >= date]
 
 
 class Portfolio:
@@ -63,9 +74,15 @@ class Portfolio:
         self.trades = list() # list of all trades: ticker, date,
 # price, size
         self.index = index
+        for ticker in self.index.tickers:
+            self.holdings[ticker] = 0
 
-    def populateHoldingList(self,tickers):
+    def populateHoldingListTickers(self,tickers):
         for ticker in tickers:
+            self.holdings[ticker] = 0
+    
+    def populateHoldingsListindex(self, indx):
+        for ticker in indx.tickers:
             self.holdings[ticker] = 0
 
     def trade(self, ticker, size, date, price):
