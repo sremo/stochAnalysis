@@ -1,5 +1,6 @@
 import numpy
 import datetime
+import math
 # read in stock prices (file, yahoo finance or direct feed)
 
 def mkdate(text):
@@ -82,7 +83,7 @@ class Position:
         self.entry_price = entry_price
         self.exit_price = "Open"
         self.profit = "Open"
-        self.return = "Open"
+        self.returnRate = "Open"
         self.status = "Open"
 
     def closePosition(self, exit_price, exit_date):
@@ -90,12 +91,69 @@ class Position:
         self.exit_date = exit_date
         self.profit = self.size*(self.exit_price-self.entry_price)
         if self.size > 0:
-            self.return = log(self.exit_price/self.entry_price)
+            self.returnRate = math.log(self.exit_price/self.entry_price)
         else:
-            self.return = log(self.entry_price/self.entry_price)
+            self.returnRate = math.log(self.entry_price/self.entry_price)
 
         self.status = "Closed"
 
+class PortfolioWPositions:
+    def __init__(self, index, portfolioname = 'Portfolio'):
+        self.name = portfolioname
+        self.holdings = {} # dict with keys given by tickers in index
+# and value given by size of position
+        self.open_positions = list()
+        self.closed_positions = list()
+        self.index = index
+        for ticker in self.index.tickers:
+            self.holdings[ticker] = 0
+
+    def populateHoldingListTickers(self,tickers):
+        for ticker in tickers:
+            self.holdings[ticker] = 0
+    
+    def populateHoldingsListindex(self, indx):
+        for ticker in indx.tickers:
+            self.holdings[ticker] = 0
+
+    def enterPosition(self, curr_ticker, enter_date,enter_price, pos_size):
+        curr_stock = self.index.stocks.get(curr_ticker)
+        if curr_stock.availableOnDate(enter_date):
+            new_position = Position(self.index, curr_stock, curr_ticker, enter_date, enter_price, pos_size)
+            self.open_positions.append(new_position)
+            self.holdings[curr_ticker] += pos_size
+            return pos_size*enter_price
+
+    def closePosition(self, postn, exit_price, exit_date):
+        self.open_positions.remove(postn)
+        postn.closePosition(exit_price, exit_date)
+        self.closed_positions.append(postn)
+        self.holdings[postn.ticker] += postn.size
+        return postn.size*exit_price
+
+    # def trade(self, ticker, size, date, price):
+    #     self.holdings[ticker] += size
+    #     self.trades.append([ticker, date, price, size])
+    #     self.active_trades.append([ticker, date, price, size])
+    #     return (size*price) # commission, slippage??
+
+    # def closeTrade(self,ticker, curr_date, size ):
+    #     stock = self.index.stocks.get(ticker)
+    #     if stock.availableOnDate(curr_date):
+    #         self.holdings[ticker] -= size
+    #         exit_price = self.index.stocks.get(ticker).close[numpy.where(stock.dates == curr_date)]
+    #         self.trades.append([ticker, curr_date, exit_price ,-size])
+    #         print ticker, exit_price, curr_date
+    #         return exit_price*size
+    #     return 0
+
+    # def closePosition(self,ticker,date, price):
+    #     size = self.holdings[ticker]
+    #     self.holdings[ticker] = 0
+    #     self.trades.append([ticker, date, price, size])
+    #     return size*price # commission, slippage??
+
+  
 class Portfolio:
     def __init__(self, index, portfolioname = 'Portfolio'):
         self.name = portfolioname
@@ -138,4 +196,3 @@ class Portfolio:
         self.trades.append([ticker, date, price, size])
         return size*price # commission, slippage??
 
-  

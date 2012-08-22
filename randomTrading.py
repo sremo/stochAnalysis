@@ -2,14 +2,15 @@ import numpy
 import stockprices
 import random
 import ystockquote
+import datetime
 
 print "Importing historical prices"
 
-tickers_list = open('tickers.txt','r')
+tickers_list = open('tickerRedux.txt','r')
 
 SP500 = stockprices.Index("SP500")
 start_date_string = "20120101"
-end_date_string = "20120701"
+end_date_string = "20120901"
 
 start_date = datetime.datetime.strptime(start_date_string, '%Y%m%d')
 
@@ -24,34 +25,70 @@ for stock_ticker in tickers_list:
     except IOError:
             print "Ticker ", stock_ticker.strip(), " could not be opened, skip to the next one\n"
 
-rndtrading_portfolio = stockprices.Portfolio(SP500, "Remo Portfolio")
+rndtrading_portfolio = stockprices.PortfolioWPositions(SP500, "Remo Portfolio")
 
 sum_trades = 0
 sum_closing_trades = 0
 no_positions = 1
+sizing =1
+
 for weekday_date in stockprices.weekdays_daterange(start_date, end_date):
         available_stocks = SP500.getAvailableStocks(weekday_date)
         if len(available_stocks) >1:
                 long_positions = random.sample(available_stocks, no_positions)
                 short_positions = random.sample(available_stocks, no_positions)
                 #print "Going long on:"
-                for long_stock in long_positions:
+                for long_stock_ticker in long_positions:
                         #print "L:", long_stock
-                        sum_trades = sum_trades - rndtrading_portfolio.trade(long_stock, 1, weekday_date,SP500.stocks.get(long_stock).close[numpy.where(SP500.stocks.get(long_stock).dates == weekday_date)])
+                    long_stock = SP500.stocks.get(long_stock_ticker)
+                    entry_price = long_stock.close[numpy.where(long_stock.dates == weekday_date)]
+                    rndtrading_portfolio.enterPosition(long_stock_ticker,weekday_date,entry_price, sizing)
                 #print "Going short on:"
-                for short_stock in short_positions:
+                for short_stock_ticker in short_positions:
                         #print "S:",short_stock
-                        rndtrading_portfolio.trade(short_stock, 1, weekday_date,SP500.stocks.get(short_stock).close[numpy.where(SP500.stocks.get(short_stock).dates == weekday_date)])
+                    short_stock = SP500.stocks.get(short_stock_ticker)
+                    entry_price = short_stock.close[numpy.where(short_stock.dates == weekday_date)]
+                    rndtrading_portfolio.enterPosition(short_stock_ticker, weekday_date, entry_price, -sizing)
 
-        for act_trade in rndtrading_portfolio.active_trades:
-            if((weekday_date-act_trade[1]).days>10):
-                close_pos_ticker = act_trade[0]
-                pos_size = act_trade[3]
-                sum_trades = sum_trades + rndtrading_portfolio.closeTrade(close_pos_ticker,weekday_date,pos_size)
-                rndtrading_portfolio.active_trades.remove(act_trade)
+        for open_pos in rndtrading_portfolio.open_positions:
+            if((weekday_date-open_pos.entry_date).days > 10):
+                if(open_pos.stock.availableOnDate(weekday_date)):
+                    exit_price = open_pos.stock.close[numpy.where(open_pos.stock.dates == weekday_date)]
+                    rndtrading_portfolio.closePosition(open_pos,exit_price,weekday_date)
 
 
-print "Balance: ", sumTrades
+tot_ret = 0
+profits = list()
+
+for clsd in rndtrading_portfolio.closed_positions:
+    tot_ret += clsd.profit
+    profits.append(clsd.profit)
+
+print tot_ret
+
+# for weekday_date in stockprices.weekdays_daterange(start_date, end_date):
+#         available_stocks = SP500.getAvailableStocks(weekday_date)
+#         if len(available_stocks) >1:
+#                 long_positions = random.sample(available_stocks, no_positions)
+#                 short_positions = random.sample(available_stocks, no_positions)
+#                 #print "Going long on:"
+#                 for long_stock in long_positions:
+#                         #print "L:", long_stock
+#                         sum_trades = sum_trades - rndtrading_portfolio.trade(long_stock, 1, weekday_date,SP500.stocks.get(long_stock).close[numpy.where(SP500.stocks.get(long_stock).dates == weekday_date)])
+#                 #print "Going short on:"
+#                 for short_stock in short_positions:
+#                         #print "S:",short_stock
+#                         rndtrading_portfolio.trade(short_stock, 1, weekday_date,SP500.stocks.get(short_stock).close[numpy.where(SP500.stocks.get(short_stock).dates == weekday_date)])
+
+#         for act_trade in rndtrading_portfolio.active_trades:
+#             if((weekday_date-act_trade[1]).days>10):
+#                 close_pos_ticker = act_trade[0]
+#                 pos_size = act_trade[3]
+#                 sum_trades = sum_trades + rndtrading_portfolio.closeTrade(close_pos_ticker,weekday_date,pos_size)
+#                 rndtrading_portfolio.active_trades.remove(act_trade)
+
+
+# print "Balance: ", sumTrades
 
 #for line in logfile:
 #	for word in line.split():
