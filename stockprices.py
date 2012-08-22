@@ -83,7 +83,7 @@ class Position:
         self.entry_price = entry_price
         self.exit_price = "Open"
         self.profit = "Open"
-        self.returnRate = "Open"
+        self.return_rate = "Open"
         self.status = "Open"
 
     def closePosition(self, exit_price, exit_date):
@@ -91,9 +91,9 @@ class Position:
         self.exit_date = exit_date
         self.profit = self.size*(self.exit_price-self.entry_price)
         if self.size > 0:
-            self.returnRate = math.log(self.exit_price/self.entry_price)
+            self.return_rate = math.log(self.exit_price/self.entry_price)
         else:
-            self.returnRate = math.log(self.entry_price/self.entry_price)
+            self.return_rate = math.log(self.entry_price/self.entry_price)
 
         self.status = "Closed"
 
