@@ -6,18 +6,23 @@ import datetime
 import matplotlib.pyplot
 
 
+reload(stockprices)
+
 def initializeit():
     print "Importing historical prices"
 
     tickers_list = open('tickers.txt','r')
 
-    global SP500 = stockprices.Index("SP500")
+    global SP500
+    SP500 = stockprices.Index("SP500")
     start_date_string = "20120101"
     end_date_string = "20120901"
 
-    global start_date = datetime.datetime.strptime(start_date_string, '%Y%m%d')
+    global start_date 
+    start_date = datetime.datetime.strptime(start_date_string, '%Y%m%d')
 
-    global end_date = datetime.datetime.strptime(end_date_string, '%Y%m%d')
+    global end_date 
+    end_date = datetime.datetime.strptime(end_date_string, '%Y%m%d')
 
     for stock_ticker in tickers_list:
         print "Download historical prices ", stock_ticker.strip()
@@ -28,18 +33,32 @@ def initializeit():
         except IOError:
                 print "Ticker ", stock_ticker.strip(), " could not be opened, skip to the next one\n"
 
-    global rndtrading_portfolio = stockprices.PortfolioWPositions(SP500, "Remo Portfolio")
+    global rndtrading_portfolio 
+    rndtrading_portfolio = stockprices.PortfolioWPositions(SP500, "Remo Portfolio")
 
-    global sum_trades = 0
-    global sum_closing_trades = 0
-    global no_positions = 10
-    global sizing =5
+    global sum_trades 
+    sum_trades = 0
+    global sum_closing_trades 
+    sum_closing_trades = 0
+    global no_positions 
+    no_positions = 20
+    global sizing 
+    sizing = 5
 
 def tradeit():
     global start_date, end_date
     global SP500
     global rndtrading_portfolio
+    global return_threshold
+    lower_return_threshold = -0.05
+    upper_return_threshold = 10
+
+    global profit_per_day
+    profit_per_day = []
+    global tot_profit_per_day
+    tot_profit_per_day = []
     for weekday_date in stockprices.weekdays_daterange(start_date, end_date):
+            daily_profit = 0
             available_stocks = SP500.getAvailableStocks(weekday_date)
             if len(available_stocks) >1:
                     long_positions = random.sample(available_stocks, no_positions)
@@ -58,27 +77,47 @@ def tradeit():
                         rndtrading_portfolio.enterPosition(short_stock_ticker, weekday_date, entry_price, -sizing)
 
             for open_pos in rndtrading_portfolio.open_positions:
-                if((weekday_date-open_pos.entry_date).days > 10):
-                    if(open_pos.stock.availableOnDate(weekday_date)):
-                        exit_price = open_pos.stock.close[numpy.where(open_pos.stock.dates == weekday_date)]
-                        rndtrading_portfolio.closePosition(open_pos,exit_price,weekday_date)
+                if(open_pos.stock.availableOnDate(weekday_date)):
+                    current_price = open_pos.stock.close[numpy.where(open_pos.stock.dates == weekday_date)]
+                    if(rndtrading_portfolio.currentReturnPosition(open_pos,current_price) < lower_return_threshold or rndtrading_portfolio.currentReturnPosition(open_pos,current_price) < upper_return_threshold or (weekday_date-open_pos.entry_date).days > 20):
+                        rndtrading_portfolio.closePosition(open_pos,current_price,weekday_date)
+                        daily_profit += open_pos.profit
+            profit_per_day.append(daily_profit)
+            tot_profit_per_day.append(sum(profit_per_day))
+    
+    
 
 
-    global tot_ret = 0
-    global profits = list()
-    global return_rates = list()
+    global tot_ret 
+    tot_ret = 0
+    global profits 
+    profits = []
+    global return_rates 
+    return_rates = []
 
     for clsd in rndtrading_portfolio.closed_positions:
         tot_ret += clsd.profit
         profits.append(clsd.profit)
         return_rates.append(clsd.return_rate)
+    rndtrading_portfolio.closed_positions = []
+    rndtrading_portfolio.open_positions = []
 
     print tot_ret
 
 def plotit():
     global return_rates
-    matplotlib.pyplot.hist(return_rates,100,(-0.15,0.15))
-    matplotlib.pyplot.savefig("retrates.png")
+    global tot_profit_per_day
+    fig = matplotlib.pyplot.figure(1)
+    matplotlib.pyplot.plot(tot_profit_per_day)
+    fig.show()
+#    global hst_fig
+#    hst_fig = matplotlib.pyplot.figure(1)
+#    matplotlib.pyplot.hist(return_rates,500,(-0.02,0.02), normed=1)
+#    matplotlib.pyplot.savefig("retrates.png")
+
+
+
+
 # for weekday_date in stockprices.weekdays_daterange(start_date, end_date):
 #         available_stocks = SP500.getAvailableStocks(weekday_date)
 #         if len(available_stocks) >1:

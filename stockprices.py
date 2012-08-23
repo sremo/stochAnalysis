@@ -131,6 +131,15 @@ class PortfolioWPositions:
         self.holdings[postn.ticker] += postn.size
         return postn.size*exit_price
 
+    def currentPLPosition(self,postn,curr_price):
+        return postn.size*(curr_price - postn.entry_price)
+
+    def currentReturnPosition(self,postn,curr_price):
+        if postn.size>0:
+            return math.log(curr_price/postn.entry_price)
+        else:
+            return math.log(postn.entry_price/curr_price)
+
     # def trade(self, ticker, size, date, price):
     #     self.holdings[ticker] += size
     #     self.trades.append([ticker, date, price, size])
